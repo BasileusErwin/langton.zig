@@ -1,9 +1,21 @@
 const std = @import("std");
 const raylib = @import("raylib");
+const Color = @import("raylib").Color;
 const State = @import("state.zig").State;
 
+const EssentialColors: [7]Color = [7]Color{
+    Color.black,
+    Color.white,
+    Color.red,
+    Color.green,
+    Color.blue,
+    Color.yellow,
+    Color.sky_blue,
+};
+
 pub const Window: type = struct {
-    pixels: []raylib.Color,
+    pixels: []Color,
+    colors: []Color,
     texture: raylib.Texture2D,
     scale: f32,
     position: raylib.Vector2,
@@ -18,10 +30,24 @@ pub const Window: type = struct {
         raylib.setTargetFPS(60);
 
         const length = state.length * state.length;
-        var pixels: []raylib.Color = try alloc.alloc(raylib.Color, state.length * state.length);
+        var pixels: []Color = try alloc.alloc(Color, state.length * state.length);
 
         for (0..length) |i| {
             pixels[i] = raylib.Color.black;
+        }
+
+        var colors: []Color = try alloc.alloc(Color, state.pattern.len);
+        for (0..state.pattern.len) |i| {
+            if (i < EssentialColors.len) {
+                colors[i] = EssentialColors[i];
+            } else {
+                colors[i] = Color{
+                    .r = @intCast(raylib.getRandomValue(0, 255)),
+                    .g = @intCast(raylib.getRandomValue(0, 255)),
+                    .b = @intCast(raylib.getRandomValue(0, 255)),
+                    .a = 255,
+                };
+            }
         }
 
         const image: raylib.Image = raylib.Image{
@@ -44,8 +70,14 @@ pub const Window: type = struct {
         const x: f32 = widthX - ((texSize * scale) / 2.0);
         const y: f32 = heightY - ((texSize * scale) / 2.0);
 
+        raylib.drawFPS(
+            @intCast(width - 100),
+            @intCast(height - 20),
+        );
+
         return Window{
             .pixels = pixels,
+            .colors = colors,
             .texture = texture,
             .scale = scale,
             .position = raylib.Vector2{ .x = x, .y = y },

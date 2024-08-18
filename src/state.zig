@@ -13,6 +13,7 @@ pub const State: type = struct {
     board: []u8,
     length: u32,
     total: u32,
+    isInvalid: bool = false,
 
     pub fn init(length: u32, pattern: []const u8) !State {
         const x: u32 = length / 2;
@@ -34,16 +35,17 @@ pub const State: type = struct {
     }
 
     pub fn next_step(self: *State) void {
-        if (self.ant.x < 0 or self.ant.x >= self.length or self.ant.y < 0 or self.ant.y >= self.length) {
-            return; // TODO: Error handling
+        if (self.isInvalid) {
+            return;
+        }
+
+        if (self.ant.x < 0 or self.ant.y < 0 or self.ant.x >= self.length or self.ant.y >= self.length) {
+            self.isInvalid = true;
+            return;
         }
 
         const index: u32 = self.index_from_xy(self.ant.x, self.ant.y);
         const current: u8 = self.board[index];
-
-        if (current < 0 or current >= (self.length * self.length)) {
-            return; // TODO: Error handling
-        }
 
         const turn: u8 = self.pattern[current % self.pattern.len];
 
@@ -73,11 +75,14 @@ pub const State: type = struct {
     }
 
     pub fn render(self: *State, window: *Window) void {
-        _ = self;
         raylib.clearBackground(raylib.Color.black);
         raylib.beginDrawing();
 
         raylib.drawTextureEx(window.texture, window.position, 0.0, window.scale, raylib.Color.white);
+
+        if (self.isInvalid) {
+            raylib.drawText("Invalid state", 10, 10, 20, raylib.Color.red);
+        }
 
         raylib.endDrawing();
     }
@@ -85,14 +90,14 @@ pub const State: type = struct {
     pub fn update(self: *State, window: *Window) void {
         self.next_step();
 
+        if (self.isInvalid) {
+            return;
+        }
+
         const total: u32 = self.length * self.length;
 
         for (0..total) |i| {
-            if (self.board[i] == 1) {
-                window.pixels[i] = raylib.Color.white;
-            } else {
-                window.pixels[i] = raylib.Color.black;
-            }
+            window.pixels[i] = window.colors[self.board[i] % window.colors.len];
         }
 
         raylib.updateTexture(window.texture, window.pixels.ptr);
