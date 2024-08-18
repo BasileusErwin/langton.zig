@@ -4,6 +4,8 @@ const Facing = @import("ant.zig").Facing;
 const FacingClockwise = @import("ant.zig").FacingClockwise;
 const FacingCounterClockwise = @import("ant.zig").FacingCounterClockwise;
 const Ants = @import("ant.zig").Ants;
+const Window = @import("window.zig").Window;
+const raylib = @import("raylib");
 
 pub const State: type = struct {
     ant: Ant,
@@ -70,22 +72,29 @@ pub const State: type = struct {
         return index / self.length;
     }
 
-    pub fn render(self: *State) void {
-        const position: u32 = self.index_from_xy(self.ant.x, self.ant.y);
+    pub fn render(self: *State, window: *Window) void {
+        _ = self;
+        raylib.clearBackground(raylib.Color.black);
+        raylib.beginDrawing();
 
-        std.debug.print("\x1B[H", .{});
-        for (0..self.total) |i| {
-            if (i % self.length == 0) {
-                std.debug.print("\n", .{});
-            }
+        raylib.drawTextureEx(window.texture, window.position, 0.0, window.scale, raylib.Color.white);
 
-            if (i == position) {
-                std.debug.print("{c}", .{Ants[self.ant.facing.to_size()]});
-            } else if (self.board[i] == 1) {
-                std.debug.print(".", .{});
+        raylib.endDrawing();
+    }
+
+    pub fn update(self: *State, window: *Window) void {
+        self.next_step();
+
+        const total: u32 = self.length * self.length;
+
+        for (0..total) |i| {
+            if (self.board[i] == 1) {
+                window.pixels[i] = raylib.Color.white;
             } else {
-                std.debug.print(" ", .{});
+                window.pixels[i] = raylib.Color.black;
             }
         }
+
+        raylib.updateTexture(window.texture, window.pixels.ptr);
     }
 };
